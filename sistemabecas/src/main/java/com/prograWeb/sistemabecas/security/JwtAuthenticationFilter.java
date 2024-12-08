@@ -1,6 +1,10 @@
 package com.prograWeb.sistemabecas.security;
 
+
+import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -9,9 +13,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
@@ -24,8 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response,
-                                    jakarta.servlet.FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
         String authorizationHeader = request.getHeader("Authorization");
 
@@ -35,7 +36,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Verificar si el encabezado tiene un token válido
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             token = authorizationHeader.substring(7); // Quitar el prefijo "Bearer "
-            username = jwtUtil.getUsernameFromToken(token);
+            try {
+                username = jwtUtil.getUsernameFromToken(token); // Extraer el username
+            } catch (Exception e) {
+                System.out.println("Error al procesar el token JWT: " + e.getMessage());
+            }
         }
 
         // Si el token es válido y no hay un usuario autenticado
@@ -46,11 +51,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            } else {
+                System.out.println("Token JWT no válido para el usuario: " + username);
             }
         }
 
         // Continuar con la siguiente etapa de la solicitud
         filterChain.doFilter(request, response);
-
     }
 }
+

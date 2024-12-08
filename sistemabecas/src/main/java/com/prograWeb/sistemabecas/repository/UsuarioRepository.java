@@ -16,4 +16,6 @@ public interface UsuarioRepository extends MongoRepository<Usuario, String> {
 
     // Verificar si un usuario con un email ya existe
     boolean existsByEmail(String email);
+
+
 }

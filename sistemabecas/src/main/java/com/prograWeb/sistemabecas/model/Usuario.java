@@ -17,7 +17,7 @@ public class Usuario {
     private String nombre;
     private String email;
     private String password;
-    private List<String> roles; // Asegúrate de que List esté importado correctamente
+
 }
 
 

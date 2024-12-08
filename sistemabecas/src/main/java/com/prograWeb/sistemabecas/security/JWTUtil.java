@@ -1,43 +1,48 @@
 package com.prograWeb.sistemabecas.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
+import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JWTUtil {
 
-    private final String SECRET_KEY = "mySecretKey"; // Cambia esto a una clave más segura
-    private final long EXPIRATION_TIME = 86400000; // 24 horas en milisegundos
+    // Genera una clave segura para HS256
+    private final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Generar JWT
+    private final long EXPIRATION_TIME = 86400000; // 24 horas
+
+    // Generar el token JWT
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(SECRET_KEY) // Firmar con la clave segura
                 .compact();
     }
 
-    // Validar JWT
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            System.out.println("JWT inválido: " + e.getMessage());
-            return false;
-        }
+    // Obtener el username del token
+    public String getUsernameFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 
-    // Obtener el nombre de usuario (o email) del token
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
+    // Validar el token
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            System.out.println("Error al validar el token JWT: " + e.getMessage());
+            return false;
+        }
     }
 }
