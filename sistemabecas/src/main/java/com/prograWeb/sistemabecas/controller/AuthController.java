@@ -63,6 +63,7 @@ public class AuthController {
         // Devolver el token al cliente
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
+        response.put("id", usuario.getId());
         return ResponseEntity.ok(response);
     }
 }
