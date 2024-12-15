@@ -6,6 +6,7 @@ import com.prograWeb.sistemabecas.model.LoginRequest;
 import com.prograWeb.sistemabecas.repository.UsuarioRepository;
 import com.prograWeb.sistemabecas.security.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -48,23 +49,21 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        // Buscar al usuario por email
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElse(null);
 
-        // Validar credenciales
         if (usuario == null || !passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            return ResponseEntity.status(401).body("Credenciales incorrectas.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas.");
         }
 
-        // Generar JWT
         String token = jwtUtil.generateToken(usuario.getEmail());
 
-        // Devolver el token al cliente
-        Map<String, String> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("token", token);
-        response.put("id", usuario.getId());
+        response.put("userId", usuario.getId());
+        response.put("admin", usuario.isAdmin());
         return ResponseEntity.ok(response);
     }
+
 }
 

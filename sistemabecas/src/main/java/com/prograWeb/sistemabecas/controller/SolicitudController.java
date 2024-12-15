@@ -1,13 +1,16 @@
 package com.prograWeb.sistemabecas.controller;
 
 import com.prograWeb.sistemabecas.model.Solicitud;
+import com.prograWeb.sistemabecas.model.Usuario;
 import com.prograWeb.sistemabecas.repository.SolicitudRepository;
+import com.prograWeb.sistemabecas.repository.UsuarioRepository;
+import com.prograWeb.sistemabecas.security.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/solicitudes")
@@ -16,64 +19,92 @@ public class SolicitudController {
     @Autowired
     private SolicitudRepository solicitudRepository;
 
-    // Obtener todas las solicitudes
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private JWTUtil jwtUtil;
+
+    @PostMapping
+    public ResponseEntity<?> crearSolicitud(@RequestBody Solicitud solicitud, @RequestHeader("Authorization") String token) {
+        try {
+            // Extraer el usuarioId a partir del token JWT
+            String email = jwtUtil.getUsernameFromToken(token.substring(7)); // Quitamos el prefijo "Bearer "
+            Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+
+            if (usuario == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autorizado.");
+            }
+
+            // Asignar el usuarioId a la solicitud
+            solicitud.setUsuarioId(usuario.getId());
+            solicitud.setEstado("pendiente"); // Estado predeterminado al crear
+            solicitudRepository.save(solicitud);
+
+            return ResponseEntity.ok(solicitud);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al crear la solicitud: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<?> obtenerSolicitudesPorUsuario(@PathVariable String usuarioId) {
+        try {
+            List<Solicitud> solicitudes = solicitudRepository.findByUsuarioId(usuarioId);
+            return ResponseEntity.ok(solicitudes);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener solicitudes: " + e.getMessage());
+        }
+    }
     @GetMapping
     public ResponseEntity<List<Solicitud>> listarSolicitudes() {
         List<Solicitud> solicitudes = solicitudRepository.findAll();
         return ResponseEntity.ok(solicitudes);
     }
 
-    // Buscar solicitudes por usuarioId
-    @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<Solicitud>> buscarPorUsuarioId(@PathVariable String usuarioId) {
-        List<Solicitud> solicitudes = solicitudRepository.findByUsuarioId(usuarioId);
-        return ResponseEntity.ok(solicitudes);
-    }
-
-    // Filtrar solicitudes por estado
-    @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<Solicitud>> filtrarPorEstado(@PathVariable String estado) {
-        List<Solicitud> solicitudes = solicitudRepository.findByEstado(estado);
-        return ResponseEntity.ok(solicitudes);
-    }
-
-    @PostMapping
-    public ResponseEntity<?> crearSolicitud(@RequestBody Solicitud solicitud) {
-        Solicitud nuevaSolicitud = solicitudRepository.save(solicitud);
-        return ResponseEntity.ok(nuevaSolicitud);
-    }
-
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarSolicitud(@PathVariable String id, @RequestBody Solicitud solicitudActualizada) {
-        // Buscar la solicitud por ID
-        Optional<Solicitud> solicitudExistente = solicitudRepository.findById(id);
+    public ResponseEntity<?> actualizarEstadoSolicitud(@PathVariable String id, @RequestBody Solicitud solicitudActualizada) {
+        try {
+            // Buscar la solicitud por ID
+            Solicitud solicitud = solicitudRepository.findById(id).orElse(null);
 
-        // Si no se encuentra, devolver un error 404
-        if (solicitudExistente.isEmpty()) {
-            return ResponseEntity.status(404).body("Solicitud no encontrada");
+            if (solicitud == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Solicitud no encontrada.");
+            }
+
+            // Actualizar el estado de la solicitud
+            solicitud.setEstado(solicitudActualizada.getEstado());
+            solicitudRepository.save(solicitud);
+
+            return ResponseEntity.ok(solicitud);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al actualizar la solicitud: " + e.getMessage());
         }
-
-        // Modificar la solicitud existente
-        Solicitud solicitud = solicitudExistente.get();
-        solicitud.setDescripcion(solicitudActualizada.getDescripcion());
-        solicitud.setEstado(solicitudActualizada.getEstado());
-        solicitud.setUsuarioId(solicitudActualizada.getUsuarioId());
-
-        // Guardar la solicitud actualizada
-        Solicitud actualizada = solicitudRepository.save(solicitud);
-
-        // Devolver la solicitud actualizada
-        return ResponseEntity.ok(actualizada);
     }
 
-
-    // Eliminar una solicitud
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarSolicitud(@PathVariable String id) {
-        return solicitudRepository.findById(id).map(solicitud -> {
-            solicitudRepository.delete(solicitud);
-            return ResponseEntity.ok("Solicitud eliminada exitosamente");
-        }).orElse(ResponseEntity.status(404).body("Solicitud no encontrada"));
-    }
-}
+        try {
+            // Buscar la solicitud por ID
+            Solicitud solicitud = solicitudRepository.findById(id).orElse(null);
 
+            if (solicitud == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Solicitud no encontrada.");
+            }
+
+            // Eliminar la solicitud
+            solicitudRepository.deleteById(id);
+
+            return ResponseEntity.ok("Solicitud eliminada correctamente.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al eliminar la solicitud: " + e.getMessage());
+        }
+    }
+
+
+
+}

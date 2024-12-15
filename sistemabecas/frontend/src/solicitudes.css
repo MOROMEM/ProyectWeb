@@ -1,0 +1,139 @@
+/* Estilos Generales */
+.Solicitudes {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.Solicitudes h1 {
+    color: #4caf50;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.Solicitudes h2 {
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+.logout-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.logout-button:hover {
+    background-color: #d32f2f;
+}
+
+/* Formulario */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+form input,
+form select,
+form button {
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+form input:focus,
+form select:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+form button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #45a049;
+}
+
+form button:active {
+    background-color: #3e8e41;
+}
+
+/* Lista de Solicitudes */
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+li {
+    background: #f9f9f9;
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+li p {
+    margin: 5px 0;
+}
+
+li button {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    margin-right: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+li button:first-of-type {
+    background-color: #4caf50;
+    color: white;
+}
+
+li button:first-of-type:hover {
+    background-color: #45a049;
+}
+
+li button:first-of-type:active {
+    background-color: #3e8e41;
+}
+
+li button:last-of-type {
+    background-color: #d9534f;
+    color: white;
+}
+
+li button:last-of-type:hover {
+    background-color: #c9302c;
+}
+
+li button:last-of-type:active {
+    background-color: #ac2925;
+}
+
+/* Mensajes */
+.message {
+    color: #d9534f;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
