@@ -16,4 +16,7 @@ public interface SolicitudRepository extends MongoRepository<Solicitud, String> 
 
     // Método para filtrar solicitudes por estado
     List<Solicitud> findByEstado(String estado);
+
+    // Método para filtrar por usuarioId
+    List<Solicitud> findByUsuarioIdOrUsuarioIdIsNull(String usuarioId);
 }

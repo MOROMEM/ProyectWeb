@@ -4,74 +4,60 @@ import PropTypes from 'prop-types';
 
 function Solicitudes({ onLogout }) {
     const [solicitudes, setSolicitudes] = useState([]);
-    const [filteredSolicitudes, setFilteredSolicitudes] = useState([]); // Nueva lista filtrada
     const [descripcion, setDescripcion] = useState('');
     const [estado, setEstado] = useState('pendiente');
     const [editingId, setEditingId] = useState(null);
     const [message, setMessage] = useState('');
-    const [search, setSearch] = useState(''); // Filtro de búsqueda por nombre
-    const [filterEstado, setFilterEstado] = useState(''); // Filtro por estado
+    const [showUserSolicitudes, setShowUserSolicitudes] = useState(false);
 
     const token = localStorage.getItem('token');
     const isAdmin = localStorage.getItem('admin') === 'true';
     const userId = localStorage.getItem('userId');
 
-    // Fetch solicitudes
+    // Fetch solicitudes desde la API
+    const fetchSolicitudes = async () => {
+        if (!token) {
+            setMessage('Token no encontrado. Por favor, inicia sesión nuevamente.');
+            return;
+        }
+
+        try {
+            const url = 'http://localhost:8080/solicitudes';
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            console.log('Response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Solicitudes recibidas del backend:', data); // Log de las solicitudes
+                setSolicitudes(data);
+            } else {
+                const errorText = await response.text();
+                console.log('Error al obtener solicitudes:', errorText);
+                setMessage(`Error al obtener las solicitudes: ${errorText}`);
+            }
+        } catch (error) {
+            console.error('Error al conectar con el servidor:', error);
+            setMessage('Error al conectar con el servidor.');
+        }
+    };
+
+
+    // Llamar a fetchSolicitudes al montar el componente
     useEffect(() => {
-        const fetchSolicitudes = async () => {
-            if (!token) {
-                setMessage('Token no encontrado. Por favor, inicia sesión nuevamente.');
-                return;
-            }
-
-            try {
-                const url = isAdmin
-                    ? 'http://localhost:8080/solicitudes'
-                    : `http://localhost:8080/solicitudes/usuario/${userId}`;
-
-                const response = await fetch(url, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setSolicitudes(data);
-                    setFilteredSolicitudes(data); // Inicializar la lista filtrada
-                } else {
-                    const errorText = await response.text();
-                    setMessage(`Error al obtener las solicitudes: ${errorText}`);
-                }
-            } catch (error) {
-                console.error('Error al conectar con el servidor:', error);
-                setMessage('Error al conectar con el servidor.');
-            }
-        };
+        console.log('Debugging Authentication Details:');
+        console.log('Token:', token);
+        console.log('User ID:', userId);
+        console.log('Is Admin:', isAdmin);
 
         fetchSolicitudes();
-    }, [isAdmin, token, userId]);
+    }, []);
 
-    // Filtrar solicitudes dinámicamente por búsqueda y estado
-    useEffect(() => {
-        let result = solicitudes;
-
-        // Filtrar por búsqueda (nombre/descripcion)
-        if (search.trim() !== '') {
-            result = result.filter((solicitud) =>
-                solicitud.descripcion.toLowerCase().includes(search.toLowerCase())
-            );
-        }
-
-        // Filtrar por estado
-        if (filterEstado !== '') {
-            result = result.filter((solicitud) => solicitud.estado === filterEstado);
-        }
-
-        setFilteredSolicitudes(result);
-    }, [search, filterEstado, solicitudes]);
-
-    // Crear solicitud
+    // Crear solicitud (Solo para admin)
     const handleCreate = async (e) => {
         e.preventDefault();
 
@@ -80,14 +66,14 @@ function Solicitudes({ onLogout }) {
             return;
         }
 
-        const data = { descripcion }; // Solo enviamos la descripción
+        const data = { descripcion };
 
         try {
             const response = await fetch('http://localhost:8080/solicitudes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`, // Enviar el token para extraer usuarioId
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify(data),
             });
@@ -107,13 +93,45 @@ function Solicitudes({ onLogout }) {
         }
     };
 
+    // Actualizar estado de la solicitud (Solo para admin)
+    const handleUpdateEstado = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch(`http://localhost:8080/solicitudes/${editingId}/estado`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ estado }),
+            });
+
+            if (response.ok) {
+                const updatedSolicitud = await response.json();
+                setSolicitudes((prev) =>
+                    prev.map((solicitud) => (solicitud.id === editingId ? updatedSolicitud : solicitud))
+                );
+                setEditingId(null);
+                setEstado('pendiente');
+                setMessage('Estado de la solicitud actualizado exitosamente.');
+            } else {
+                const errorText = await response.text();
+                setMessage(`Error al actualizar el estado: ${errorText}`);
+            }
+        } catch (error) {
+            console.error('Error al conectar con el servidor:', error);
+            setMessage('Error al conectar con el servidor.');
+        }
+    };
+
     // Eliminar solicitud (Solo para admin)
     const handleDelete = async (id) => {
         try {
             const response = await fetch(`http://localhost:8080/solicitudes/${id}`, {
                 method: 'DELETE',
                 headers: {
-                    Authorization: `Bearer ${token}`, // Token necesario para autorización
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -130,39 +148,27 @@ function Solicitudes({ onLogout }) {
         }
     };
 
-    // Actualizar solicitud (Solo para admin)
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-
-        if (!descripcion.trim()) {
-            setMessage('La descripción no puede estar vacía.');
-            return;
-        }
-
-        const data = { descripcion, estado }; // Datos actualizados de la solicitud
-
+    // Solicitar beca (Usuario normal)
+    const handleSolicitarBeca = async (solicitudId) => {
         try {
-            const response = await fetch(`http://localhost:8080/solicitudes/${editingId}`, {
+            const response = await fetch(`http://localhost:8080/solicitudes/${solicitudId}/asociar-usuario`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`, // Token necesario para autorización
+                    Authorization: `Bearer ${token}`, // El token incluye el usuario logueado
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ estado: 'pendiente' }) // Solo enviar el estado si es necesario
             });
 
             if (response.ok) {
                 const updatedSolicitud = await response.json();
                 setSolicitudes((prev) =>
-                    prev.map((solicitud) => (solicitud.id === editingId ? updatedSolicitud : solicitud))
+                    prev.map((solicitud) => (solicitud.id === solicitudId ? updatedSolicitud : solicitud))
                 );
-                setEditingId(null); // Limpiar edición
-                setDescripcion('');
-                setEstado('pendiente');
-                setMessage('Solicitud actualizada exitosamente.');
+                setMessage('Beca solicitada exitosamente.');
             } else {
                 const errorText = await response.text();
-                setMessage(`Error al actualizar la solicitud: ${errorText}`);
+                setMessage(`Error al solicitar beca: ${errorText}`);
             }
         } catch (error) {
             console.error('Error al conectar con el servidor:', error);
@@ -171,6 +177,10 @@ function Solicitudes({ onLogout }) {
     };
 
 
+    // Alternar entre "Mis Solicitudes" y "Becas Disponibles" para usuarios
+    const toggleView = () => {
+        setShowUserSolicitudes((prev) => !prev);
+    };
 
     return (
         <div className="Solicitudes">
@@ -182,67 +192,86 @@ function Solicitudes({ onLogout }) {
 
             {message && <p className="message">{message}</p>}
 
-            {/* Filtros */}
-            <div className="filters">
-                <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)}>
-                    <option value="">Filtrar por estado</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="aprobado">Aprobado</option>
-                    <option value="rechazado">Rechazado</option>
-                </select>
-            </div>
+            {!isAdmin && (
+                <button onClick={toggleView} className="toggle-view-button">
+                    {showUserSolicitudes ? 'Ver Becas Disponibles' : 'Ver Mis Solicitudes'}
+                </button>
+            )}
 
-            {/* Formulario para crear o actualizar solicitudes */}
-            <form onSubmit={editingId ? handleUpdate : handleCreate}>
-                <input
-                    type="text"
-                    placeholder="Descripción de la solicitud"
-                    value={descripcion}
-                    onChange={(e) => setDescripcion(e.target.value)}
-                    required
-                />
-                {isAdmin && editingId && (
+            {isAdmin && (
+                <form onSubmit={handleCreate}>
+                    <input
+                        type="text"
+                        placeholder="Descripción de la solicitud"
+                        value={descripcion}
+                        onChange={(e) => setDescripcion(e.target.value)}
+                        required
+                    />
+                    <button type="submit">Crear Solicitud</button>
+                </form>
+            )}
+
+            <h2>{isAdmin ? 'Lista de Solicitudes' : showUserSolicitudes ? 'Mis Solicitudes' : 'Becas Disponibles'}</h2>
+            {solicitudes.length === 0 ? (
+                <p>No hay solicitudes disponibles.</p>
+            ) : (
+                <ul>
+                    {solicitudes
+                        .filter((solicitud) => {
+                            console.log('Solicitud usuarioId:', solicitud.usuarioId, 'Current userId:', userId);
+
+                            if (isAdmin) return true;
+
+                            if (showUserSolicitudes) {
+                                return solicitud.usuarioId === userId; // Mis solicitudes
+                            } else {
+                                return !solicitud.usuarioId; // Becas disponibles
+                            }
+                        })
+
+
+                        .map((solicitud) => (
+                            <li key={solicitud.id}>
+                                <p>
+                                    <strong>Descripción:</strong> {solicitud.descripcion}
+                                </p>
+                                <p>
+                                    <strong>Estado:</strong> {solicitud.estado}
+                                </p>
+                                {/* Botón para solicitar beca (usuarios normales, en vista de becas disponibles) */}
+                                {!isAdmin && !showUserSolicitudes && !solicitud.usuarioId && (
+                                    <button onClick={() => handleSolicitarBeca(solicitud.id)}>
+                                        Solicitar Beca
+                                    </button>
+                                )}
+                                {/* Acciones solo para administradores */}
+                                {isAdmin && (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                setEditingId(solicitud.id);
+                                                setEstado(solicitud.estado);
+                                            }}
+                                        >
+                                            Actualizar Estado
+                                        </button>
+                                        <button onClick={() => handleDelete(solicitud.id)}>Eliminar</button>
+                                    </>
+                                )}
+                            </li>
+                        ))}
+                </ul>
+            )}
+
+            {isAdmin && editingId && (
+                <form onSubmit={handleUpdateEstado}>
                     <select value={estado} onChange={(e) => setEstado(e.target.value)}>
                         <option value="pendiente">Pendiente</option>
                         <option value="aprobado">Aprobado</option>
                         <option value="rechazado">Rechazado</option>
                     </select>
-                )}
-                <button type="submit">{editingId ? 'Actualizar' : 'Crear'}</button>
-            </form>
-
-            <h2>Lista de Solicitudes</h2>
-            {filteredSolicitudes.length === 0 ? (
-                <p>No se encontraron solicitudes.</p>
-            ) : (
-                <ul>
-                    {filteredSolicitudes.map((solicitud) => (
-                        <li key={solicitud.id}>
-                            <p>
-                                <strong>Descripción:</strong> {solicitud.descripcion}
-                            </p>
-                            <p>
-                                <strong>Estado:</strong> {solicitud.estado}
-                            </p>
-                            {isAdmin && (
-                                <>
-                                    <button
-                                        onClick={() => {
-                                            setEditingId(solicitud.id);
-                                            setDescripcion(solicitud.descripcion);
-                                            setEstado(solicitud.estado);
-                                        }}
-                                    >
-                                        Editar
-                                    </button>
-                                    <button onClick={() => handleDelete(solicitud.id)}>
-                                        Eliminar
-                                    </button>
-                                </>
-                            )}
-                        </li>
-                    ))}
-                </ul>
+                    <button type="submit">Guardar Cambios</button>
+                </form>
             )}
         </div>
     );
