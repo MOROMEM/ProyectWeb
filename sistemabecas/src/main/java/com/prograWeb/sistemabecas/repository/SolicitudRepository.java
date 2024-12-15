@@ -4,6 +4,7 @@ package com.prograWeb.sistemabecas.repository;
 import java.util.List;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.prograWeb.sistemabecas.model.Solicitud;
@@ -11,12 +12,19 @@ import com.prograWeb.sistemabecas.model.Solicitud;
 @Repository
 public interface SolicitudRepository extends MongoRepository<Solicitud, String> {
 
-    // Método para buscar solicitudes por el ID del usuario
+    // Encuentra solicitudes sin usuarios asociados
+    @Query("{ 'usuarios': { $size: 0 } }")
+    List<Solicitud> findWithoutUsuarios();
+
+    // Encuentra solicitudes donde un usuario específico está asociado
+    @Query("{ 'usuarios.usuarioId': ?0 }")
     List<Solicitud> findByUsuarioId(String usuarioId);
 
-    // Método para filtrar solicitudes por estado
-    List<Solicitud> findByEstado(String estado);
+    // Filtro por usuario
+    @Query("{ 'usuarios.usuarioId': ?0 }")
+    List<Solicitud> findByUsuarios_UsuarioId(String usuarioId);
 
-    // Método para filtrar por usuarioId
-    List<Solicitud> findByUsuarioIdOrUsuarioIdIsNull(String usuarioId);
+    @Query("{ '$or': [ { 'usuarios.usuarioId': ?0 }, { 'usuarios': { $size: 0 } } ] }")
+    List<Solicitud> findByUsuarios_UsuarioIdOrUsuariosEmpty(String usuarioId);
+
 }

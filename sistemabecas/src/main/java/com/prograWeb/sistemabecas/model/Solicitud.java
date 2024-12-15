@@ -5,12 +5,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Document(collection = "solicitudes")
 public class Solicitud {
+
     @Id
     private String id;
-    private String usuarioId;
     private String descripcion;
-    private String estado;
+    private List<UsuarioSolicitud> usuarios = new ArrayList<>();
+
 }

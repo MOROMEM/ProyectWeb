@@ -22,18 +22,15 @@ function Solicitudes({ onLogout }) {
         }
 
         try {
-            const url = 'http://localhost:8080/solicitudes';
-            const response = await fetch(url, {
+            const response = await fetch('http://localhost:8080/solicitudes', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            console.log('Response status:', response.status);
-
+            console.log('Token enviado:', token); // Debugging
             if (response.ok) {
                 const data = await response.json();
-                console.log('Solicitudes recibidas del backend:', data); // Log de las solicitudes
                 setSolicitudes(data);
             } else {
                 const errorText = await response.text();
@@ -46,8 +43,6 @@ function Solicitudes({ onLogout }) {
         }
     };
 
-
-    // Llamar a fetchSolicitudes al montar el componente
     useEffect(() => {
         console.log('Debugging Authentication Details:');
         console.log('Token:', token);
@@ -57,31 +52,20 @@ function Solicitudes({ onLogout }) {
         fetchSolicitudes();
     }, []);
 
-    // Crear solicitud (Solo para admin)
-    const handleCreate = async (e) => {
-        e.preventDefault();
-
-        if (!descripcion.trim()) {
-            setMessage('La descripción no puede estar vacía.');
-            return;
-        }
-
-        const data = { descripcion };
-
+    const handleCreateSolicitud = async () => {
         try {
-            const response = await fetch('http://localhost:8080/solicitudes', {
+            const response = await fetch('http://localhost:8080/solicitudes/crear', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ descripcion }),
             });
 
             if (response.ok) {
                 const newSolicitud = await response.json();
                 setSolicitudes((prev) => [...prev, newSolicitud]);
-                setDescripcion('');
                 setMessage('Solicitud creada exitosamente.');
             } else {
                 const errorText = await response.text();
@@ -93,7 +77,6 @@ function Solicitudes({ onLogout }) {
         }
     };
 
-    // Actualizar estado de la solicitud (Solo para admin)
     const handleUpdateEstado = async (e) => {
         e.preventDefault();
 
@@ -125,7 +108,6 @@ function Solicitudes({ onLogout }) {
         }
     };
 
-    // Eliminar solicitud (Solo para admin)
     const handleDelete = async (id) => {
         try {
             const response = await fetch(`http://localhost:8080/solicitudes/${id}`, {
@@ -148,16 +130,14 @@ function Solicitudes({ onLogout }) {
         }
     };
 
-    // Solicitar beca (Usuario normal)
     const handleSolicitarBeca = async (solicitudId) => {
         try {
             const response = await fetch(`http://localhost:8080/solicitudes/${solicitudId}/asociar-usuario`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`, // El token incluye el usuario logueado
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ estado: 'pendiente' }) // Solo enviar el estado si es necesario
             });
 
             if (response.ok) {
@@ -176,30 +156,94 @@ function Solicitudes({ onLogout }) {
         }
     };
 
-
-    // Alternar entre "Mis Solicitudes" y "Becas Disponibles" para usuarios
     const toggleView = () => {
         setShowUserSolicitudes((prev) => !prev);
     };
 
+    const renderSolicitudes = () => {
+        // Filtrar solicitudes según el rol y la vista actual
+        const filteredSolicitudes = solicitudes.filter((solicitud) => {
+            if (isAdmin) {
+                return true; // Administradores ven todas las solicitudes
+            }
+
+            const usuarioAsociado = solicitud.usuarios.some((usuario) => usuario.usuarioId === userId);
+
+            if (showUserSolicitudes) {
+                // En "Mis Solicitudes", mostrar solo las asociadas al usuario actual
+                console.log(`"Mis Solicitudes" - Usuario Asociado: ${usuarioAsociado}, Solicitud:`, solicitud);
+                return usuarioAsociado;
+            }
+
+            // En "Becas Disponibles", mostrar todas excepto las asociadas al usuario actual
+            console.log(`"Becas Disponibles" - Usuario Asociado: ${usuarioAsociado}, Solicitud:`, solicitud);
+            return !usuarioAsociado;
+        });
+
+        // Si no hay solicitudes después de filtrar
+        if (filteredSolicitudes.length === 0) {
+            console.log('No hay solicitudes para mostrar en la vista actual.');
+        }
+
+        // Renderizar solicitudes filtradas
+        return filteredSolicitudes.map((solicitud) => (
+            <li key={solicitud.id}>
+                <p>
+                    <strong>Descripción:</strong> {solicitud.descripcion}
+                </p>
+                <p>
+                    <strong>Usuarios Asociados:</strong>
+                    <ul>
+                        {solicitud.usuarios.map((usuario) => (
+                            <li key={usuario.usuarioId}>
+                                Usuario: {usuario.nombre} (ID: {usuario.usuarioId}) - Estado: {usuario.estado}
+                            </li>
+                        ))}
+                    </ul>
+                </p>
+
+                {/* Botón para solicitar beca (solo usuarios en "Becas Disponibles") */}
+                {!isAdmin && !showUserSolicitudes && (
+                    <button onClick={() => handleSolicitarBeca(solicitud.id)}>
+                        Solicitar Beca
+                    </button>
+                )}
+
+                {/* Botones de administrador */}
+                {isAdmin && (
+                    <>
+                        <button
+                            onClick={() => {
+                                setEditingId(solicitud.id);
+                                setEstado('pendiente'); // Establecer estado inicial para editar
+                            }}
+                        >
+                            Actualizar Estado
+                        </button>
+                        <button onClick={() => handleDelete(solicitud.id)}>Eliminar</button>
+                    </>
+                )}
+            </li>
+        ));
+    };
+
+
+
+
     return (
         <div className="Solicitudes">
             <h1>Gestión de Solicitudes</h1>
-
             <button onClick={onLogout} className="logout-button">
                 Cerrar Sesión
             </button>
-
             {message && <p className="message">{message}</p>}
-
             {!isAdmin && (
                 <button onClick={toggleView} className="toggle-view-button">
                     {showUserSolicitudes ? 'Ver Becas Disponibles' : 'Ver Mis Solicitudes'}
                 </button>
             )}
-
             {isAdmin && (
-                <form onSubmit={handleCreate}>
+                <form onSubmit={handleCreateSolicitud}>
                     <input
                         type="text"
                         placeholder="Descripción de la solicitud"
@@ -210,59 +254,8 @@ function Solicitudes({ onLogout }) {
                     <button type="submit">Crear Solicitud</button>
                 </form>
             )}
-
             <h2>{isAdmin ? 'Lista de Solicitudes' : showUserSolicitudes ? 'Mis Solicitudes' : 'Becas Disponibles'}</h2>
-            {solicitudes.length === 0 ? (
-                <p>No hay solicitudes disponibles.</p>
-            ) : (
-                <ul>
-                    {solicitudes
-                        .filter((solicitud) => {
-                            console.log('Solicitud usuarioId:', solicitud.usuarioId, 'Current userId:', userId);
-
-                            if (isAdmin) return true;
-
-                            if (showUserSolicitudes) {
-                                return solicitud.usuarioId === userId; // Mis solicitudes
-                            } else {
-                                return !solicitud.usuarioId; // Becas disponibles
-                            }
-                        })
-
-
-                        .map((solicitud) => (
-                            <li key={solicitud.id}>
-                                <p>
-                                    <strong>Descripción:</strong> {solicitud.descripcion}
-                                </p>
-                                <p>
-                                    <strong>Estado:</strong> {solicitud.estado}
-                                </p>
-                                {/* Botón para solicitar beca (usuarios normales, en vista de becas disponibles) */}
-                                {!isAdmin && !showUserSolicitudes && !solicitud.usuarioId && (
-                                    <button onClick={() => handleSolicitarBeca(solicitud.id)}>
-                                        Solicitar Beca
-                                    </button>
-                                )}
-                                {/* Acciones solo para administradores */}
-                                {isAdmin && (
-                                    <>
-                                        <button
-                                            onClick={() => {
-                                                setEditingId(solicitud.id);
-                                                setEstado(solicitud.estado);
-                                            }}
-                                        >
-                                            Actualizar Estado
-                                        </button>
-                                        <button onClick={() => handleDelete(solicitud.id)}>Eliminar</button>
-                                    </>
-                                )}
-                            </li>
-                        ))}
-                </ul>
-            )}
-
+            {solicitudes.length === 0 ? <p>No hay solicitudes disponibles.</p> : <ul>{renderSolicitudes()}</ul>}
             {isAdmin && editingId && (
                 <form onSubmit={handleUpdateEstado}>
                     <select value={estado} onChange={(e) => setEstado(e.target.value)}>
