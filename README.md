@@ -5,8 +5,8 @@ Aplicación web con arquitectura cliente-servidor:
 
 El sistema sigue una estructura cliente-servidor que permite la separación entre la interfaz de usuario (frontend) y la lógica de negocio (backend), garantizando escalabilidad y facilidad de mantenimiento.
 
-API RESTful:
-El backend expone endpoints RESTful que permiten la comunicación entre el cliente y el servidor de forma eficiente y estandarizada. Las operaciones típicas incluyen creación, lectura, actualización y eliminación (CRUD) de solicitudes de becas.
+API REST:
+El backend expone endpoints REST que permiten la comunicación entre el cliente y el servidor de forma eficiente y estandarizada. Las operaciones típicas incluyen creación, lectura, actualización y eliminación (CRUD) de solicitudes de becas.
 
 ---
 
