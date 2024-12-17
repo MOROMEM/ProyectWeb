@@ -49,7 +49,7 @@ Ubicado en la carpeta `frontend/`:
 
 ---
 
-[Funcionamiento] ("C:\Users\horac\Desktop\ProyectoWeb\plantuml.svg")
+[Funcionamiento](plantuml.png)
 
 ## 🚀 Tecnologías Utilizadas
 
