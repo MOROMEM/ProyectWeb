@@ -1,6 +1,8 @@
 package com.prograWeb.sistemabecas.dto;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -17,6 +19,7 @@ public class SolicitudEnriquecida {
     }
 
 
+
     @Data
     public static class UsuarioInfo {
         private String usuarioId;
@@ -28,5 +31,6 @@ public class SolicitudEnriquecida {
             this.nombre = nombre;
             this.estado = estado;
         }
+
     }
 }

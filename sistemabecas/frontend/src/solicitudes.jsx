@@ -6,6 +6,7 @@ function Solicitudes({ onLogout }) {
     const [solicitudes, setSolicitudes] = useState([]);
     const [descripcion, setDescripcion] = useState('');
     const [estado, setEstado] = useState('pendiente');
+    const [selectedUsuarioId, setSelectedUsuarioId] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [message, setMessage] = useState('');
     const [showUserSolicitudes, setShowUserSolicitudes] = useState(false);
@@ -22,7 +23,16 @@ function Solicitudes({ onLogout }) {
         }
 
         try {
-            const response = await fetch('http://localhost:8080/solicitudes', {
+            let url = 'http://localhost:8080/solicitudes/';
+            if (isAdmin) {
+                url += 'admin/todas';
+            } else if (showUserSolicitudes) {
+                url += 'usuario/asociadas';
+            } else {
+                url += 'usuario/no-asociadas';
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -50,7 +60,7 @@ function Solicitudes({ onLogout }) {
         console.log('Is Admin:', isAdmin);
 
         fetchSolicitudes();
-    }, []);
+    }, [isAdmin, showUserSolicitudes]); // Refetch when admin or toggle changes
 
     const handleCreateSolicitud = async () => {
         try {
@@ -81,25 +91,24 @@ function Solicitudes({ onLogout }) {
         e.preventDefault();
 
         try {
-            const response = await fetch(`http://localhost:8080/solicitudes/${editingId}/estado`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ estado }),
-            });
+            const response = await fetch(
+                `http://localhost:8080/solicitudes/${editingId}/usuarios/${selectedUsuarioId}/estado`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ estado }),
+                }
+            );
 
             if (response.ok) {
-                const updatedSolicitud = await response.json();
-                setSolicitudes((prev) =>
-                    prev.map((solicitud) => (solicitud.id === editingId ? updatedSolicitud : solicitud))
-                );
-                setEditingId(null);
-                setEstado('pendiente');
-                setMessage('Estado de la solicitud actualizado exitosamente.');
+                console.log('Estado actualizado exitosamente.');
+                fetchSolicitudes(); // Refresca las solicitudes
             } else {
                 const errorText = await response.text();
+                console.error('Error al actualizar el estado:', errorText);
                 setMessage(`Error al actualizar el estado: ${errorText}`);
             }
         } catch (error) {
@@ -161,61 +170,51 @@ function Solicitudes({ onLogout }) {
     };
 
     const renderSolicitudes = () => {
-        // Filtrar solicitudes según el rol y la vista actual
-        const filteredSolicitudes = solicitudes.filter((solicitud) => {
-            if (isAdmin) {
-                return true; // Administradores ven todas las solicitudes
-            }
-
-            const usuarioAsociado = solicitud.usuarios.some((usuario) => usuario.usuarioId === userId);
-
-            if (showUserSolicitudes) {
-                // En "Mis Solicitudes", mostrar solo las asociadas al usuario actual
-                console.log(`"Mis Solicitudes" - Usuario Asociado: ${usuarioAsociado}, Solicitud:`, solicitud);
-                return usuarioAsociado;
-            }
-
-            // En "Becas Disponibles", mostrar todas excepto las asociadas al usuario actual
-            console.log(`"Becas Disponibles" - Usuario Asociado: ${usuarioAsociado}, Solicitud:`, solicitud);
-            return !usuarioAsociado;
-        });
-
-        // Si no hay solicitudes después de filtrar
-        if (filteredSolicitudes.length === 0) {
-            console.log('No hay solicitudes para mostrar en la vista actual.');
-        }
-
-        // Renderizar solicitudes filtradas
-        return filteredSolicitudes.map((solicitud) => (
+        return solicitudes.map((solicitud) => (
             <li key={solicitud.id}>
                 <p>
                     <strong>Descripción:</strong> {solicitud.descripcion}
                 </p>
-                <p>
-                    <strong>Usuarios Asociados:</strong>
-                    <ul>
-                        {solicitud.usuarios.map((usuario) => (
-                            <li key={usuario.usuarioId}>
-                                Usuario: {usuario.nombre} (ID: {usuario.usuarioId}) - Estado: {usuario.estado}
-                            </li>
-                        ))}
-                    </ul>
-                </p>
 
-                {/* Botón para solicitar beca (solo usuarios en "Becas Disponibles") */}
-                {!isAdmin && !showUserSolicitudes && (
-                    <button onClick={() => handleSolicitarBeca(solicitud.id)}>
-                        Solicitar Beca
-                    </button>
+                {/* Mostrar estados solo en 'Mis Solicitudes' */}
+                {!isAdmin && showUserSolicitudes && (
+                    <p>
+                        <strong>Estado:</strong>{" "}
+                        {solicitud.usuarios
+                            .filter((usuarioItem) => usuarioItem.usuario.id === userId) // Filtra por usuario.id
+                            .map((usuarioItem) => usuarioItem.estado) // Obtén solo el estado
+                            .join(", ") || "No asignado"} {/* Si no hay coincidencias */}
+                    </p>
+
+
                 )}
 
-                {/* Botones de administrador */}
+                {/* Mostrar usuarios asociados solo para admin */}
+                {isAdmin && (
+                    <p>
+                        <strong>Usuarios Asociados:</strong>
+                        <ul>
+                            {solicitud.usuarios.map((usuario) => (
+                                <li key={usuario.usuarioId}>
+                                    Usuario: {usuario.nombre} (ID: {usuario.usuarioId}) - Estado: {usuario.estado}
+                                </li>
+                            ))}
+                        </ul>
+                    </p>
+                )}
+
+                {/* Botón de "Solicitar Beca" para usuarios en "Becas Disponibles" */}
+                {!isAdmin && !showUserSolicitudes && (
+                    <button onClick={() => handleSolicitarBeca(solicitud.id)}>Solicitar Beca</button>
+                )}
+
+                {/* Opciones de admin */}
                 {isAdmin && (
                     <>
                         <button
                             onClick={() => {
                                 setEditingId(solicitud.id);
-                                setEstado('pendiente'); // Establecer estado inicial para editar
+                                setEstado('pendiente');
                             }}
                         >
                             Actualizar Estado
@@ -224,11 +223,9 @@ function Solicitudes({ onLogout }) {
                     </>
                 )}
             </li>
+
         ));
     };
-
-
-
 
     return (
         <div className="Solicitudes">
@@ -258,14 +255,30 @@ function Solicitudes({ onLogout }) {
             {solicitudes.length === 0 ? <p>No hay solicitudes disponibles.</p> : <ul>{renderSolicitudes()}</ul>}
             {isAdmin && editingId && (
                 <form onSubmit={handleUpdateEstado}>
+                    <select
+                        value={selectedUsuarioId}
+                        onChange={(e) => setSelectedUsuarioId(e.target.value)}
+                    >
+                        <option value="">Selecciona un usuario</option>
+                        {solicitudes
+                            .find((solicitud) => solicitud.id === editingId)
+                            ?.usuarios.map((usuario) => (
+                                <option key={usuario.usuarioId} value={usuario.usuarioId}>
+                                    {usuario.nombre}
+                                </option>
+                            ))}
+                    </select>
+
                     <select value={estado} onChange={(e) => setEstado(e.target.value)}>
                         <option value="pendiente">Pendiente</option>
                         <option value="aprobado">Aprobado</option>
                         <option value="rechazado">Rechazado</option>
                     </select>
+
                     <button type="submit">Guardar Cambios</button>
                 </form>
             )}
+
         </div>
     );
 }
