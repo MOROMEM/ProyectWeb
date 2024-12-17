@@ -1,38 +1,82 @@
-# ProyectWeb
+# Sistema de Becas
 
-Sistema de Becas
+Este proyecto es una aplicación web de **Gestión de Solicitudes de Becas**, diseñada con un **frontend** en React y un **backend** en Java utilizando Spring Boot. Implementa una arquitectura cliente-servidor con API RESTful y utiliza MongoDB como base de datos.
 
-HTML,JavaScript,Tailwind,Node.js,
+---
 
-Login/Registro
+## 📁 Estructura del Proyecto
 
-Gestión de solicitudes (crear/listar solicitudes)
+### Backend - **Java Spring Boot**
 
-	
-PRÁCTICA PW1
+Ubicado en el directorio principal del proyecto:
 
-Implementar (cada alumno debe realizar una implementación diferente, que debe buscar en el post “Contexto de implementación de cada alumno”):
+- **src/main/java/com.prograWeb.sistemabecas**
+  - `config` - Configuraciones de CORS y otras configuraciones.
+    - `CorsConfig`
+  - `controller` - Controladores que gestionan las solicitudes HTTP.
+    - `AuthController`
+    - `SolicitudController`
+  - `dto` - Objetos de Transferencia de Datos.
+    - `SolicitudEnriquecida`
+  - `model` - Modelos de datos para la aplicación.
+    - `LoginRequest`, `Solicitud`, `Usuario`, `UsuarioSolicitud`
+  - `repository` - Interfaces para el acceso a MongoDB.
+    - `SolicitudRepository`, `UsuarioRepository`, `UsuarioSolicitudRepository`
+  - `security` - Implementación de seguridad JWT.
+    - `CustomUserDetailsService`, `JwtAuthenticationFilter`, `JWTUtil`, `SecurityConfig`
+  - `service`
+    - `ProyectsistemabecasApplication` - Clase principal de Spring Boot.
+- **resources/application.properties** - Configuración de propiedades del servidor.
+- **test/java** - Pruebas del backend.
 
-·         Autenticación:
+---
 
-o   Registro de usuarios
+### Frontend - **React con Vite**
 
-o   Login con JWT
+Ubicado en la carpeta `frontend/`:
 
-o   Protección de rutas
+- **src**
+  - `App.jsx` - Componente principal de la aplicación.
+  - `main.jsx` - Punto de entrada del frontend.
+  - `solicitudes.jsx` - Componente para gestionar solicitudes de becas.
+  - `assets/` - Recursos estáticos.
+  - **Estilos**:
+    - `App.css`
+    - `solicitudes.css`
+  - **Configuración**:
+    - `vite.config.js` - Configuración de Vite.
+- **public/** - Archivos estáticos para la aplicación React.
 
-·         Una página principal de gestión que incluya (según el contexto):
+---
 
-o   Formulario para crear nuevo elemento
+## 🚀 Tecnologías Utilizadas
 
-o   Listado de elementos existentes
+### Backend:
 
-o   Posibilidad de filtrar/buscar elementos
+- **Java** y **Spring Boot** - Framework principal para construir el servidor REST.
+- **Maven** - Gestión de dependencias.
+- **MongoDB** - Base de datos NoSQL para almacenar solicitudes de becas y usuarios.
+- **JWT** - Seguridad y autenticación con JSON Web Tokens.
 
-·         Base de datos:
+### Frontend:
 
-o   Colección de usuarios
+- **React** - Framework de JavaScript para el desarrollo de la interfaz.
+- **Vite** - Herramienta de construcción rápida para React.
+- **CSS** - Estilización de componentes.
 
-o   Colección específica del contexto
+---
 
-o   Relaciones entre ambas
+## 🔧 Instalación
+
+### Requisitos previos:
+
+- **Node.js** (para el frontend)
+- **Java 17+** y **Maven** (para el backend)
+- **MongoDB** instalado y configurado.
+
+### Clonar el repositorio
+
+```bash
+git clone https://github.com/tuusuario/sistemabecas.git
+cd sistemabecas
+```
