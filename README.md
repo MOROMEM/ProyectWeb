@@ -49,61 +49,7 @@ Ubicado en la carpeta `frontend/`:
 
 ---
 
-from graphviz import Digraph
-
-# Crear un diagrama de flujo
-
-diagram = Digraph(comment='Sistema de Becas', format='png')
-
-# Estilo general
-
-diagram.attr(rankdir='TB', size='10')
-
-# Nodo inicial
-
-diagram.node('start', 'Inicio', shape='ellipse')
-
-# Proceso de Login / Registro
-
-diagram.node('login', 'Login / Registro', shape='box')
-diagram.node('user', 'USER\n(Rol: Usuario o Admin)', shape='diamond')
-
-# Acciones del Usuario
-
-diagram.node('user_view_requests', 'Ver todas las solicitudes\n y solicitar becas', shape='box')
-diagram.node('user_view_my_requests', 'Ver solicitudes asociadas', shape='box')
-
-# Acciones del Admin
-
-diagram.node('admin_create_request', 'Crear nuevas solicitudes\n(Agregar descripción)', shape='box')
-diagram.node('admin_update_status', 'Actualizar estado de becas', shape='box')
-diagram.node('admin_delete_request', 'Eliminar solicitudes', shape='box')
-
-# Fin
-
-diagram.node('end', 'Fin', shape='ellipse')
-
-# Conexiones
-
-diagram.edge('start', 'login')
-diagram.edge('login', 'user')
-
-# Usuario conectado
-
-diagram.edge('user', 'user_view_requests', label='Usuario')
-diagram.edge('user_view_requests', 'user_view_my_requests')
-diagram.edge('user', 'admin_create_request', label='Admin')
-diagram.edge('admin_create_request', 'admin_update_status')
-diagram.edge('admin_update_status', 'admin_delete_request')
-diagram.edge('user_view_my_requests', 'end')
-diagram.edge('admin_delete_request', 'end')
-
-# Renderizar el diagrama
-
-diagram_path = '/mnt/data/sistema_becas_diagrama'
-diagram.render(diagram_path, cleanup=True)
-
-diagram_path + '.png'
+[Funcionamiento] ("C:\Users\horac\Desktop\ProyectoWeb\plantuml.svg")
 
 ## 🚀 Tecnologías Utilizadas
 
