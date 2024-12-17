@@ -15,10 +15,10 @@ import java.util.List;
 
 
 @Data
-@Document(collection = "solicitudes") // Indica que es un documento en MongoDB
+@Document(collection = "solicitudes")
 public class Solicitud {
 
-    @Id // MongoDB utiliza un identificador único con @Id
+    @Id
     private String id;
 
     private String descripcion;

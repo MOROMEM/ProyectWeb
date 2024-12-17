@@ -15,7 +15,7 @@ function App() {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            setIsLoggedIn(true); // Si hay un token, marcar como autenticado
+            setIsLoggedIn(true); // En caso de token, lo identifica
         }
     }, []);
 

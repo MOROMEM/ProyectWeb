@@ -12,11 +12,11 @@ import com.prograWeb.sistemabecas.model.Solicitud;
 @Repository
 public interface SolicitudRepository extends MongoRepository<Solicitud, String> {
 
-    // Encuentra solicitudes sin usuarios asociados
+    // Buscar solicitudes sin usuarios asociados
     @Query("{ 'usuarios': { $size: 0 } }")
     List<Solicitud> findWithoutUsuarios();
 
-    // Encuentra solicitudes donde un usuario específico está asociado
+    // Buscar solicitudes donde un usuario específico está asociado
     @Query("{ 'usuarios.usuarioId': ?0 }")
     List<Solicitud> findByUsuarioId(String usuarioId);
 

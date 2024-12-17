@@ -13,12 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.Console;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/solicitudes")
@@ -70,22 +69,22 @@ public class SolicitudController {
             @PathVariable String usuarioId,
             @RequestBody Map<String, String> payload) {
         try {
-            String nuevoEstado = payload.get("estado"); // Asegúrate de que payload contiene "estado"
+            String nuevoEstado = payload.get("estado");
 
-            // Verificar si solicitud existe
+
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-            // Buscar relación UsuarioSolicitud
+
             UsuarioSolicitud usuarioSolicitud = solicitud.getUsuarios().stream()
                     .filter(us -> us.getUsuario().getId().equals(usuarioId)) // Revisar si getUsuario() es null
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Usuario no asociado a esta solicitud"));
-//cambiar getId() y ver que pasa
-            // Actualizar estado
+
+
             usuarioSolicitud.setEstado(nuevoEstado);
 
-            // Guardar cambios
+            // Usuario no le coge porque??
             usuarioSolicitudRepository.save(usuarioSolicitud);
 
             return ResponseEntity.ok("Estado actualizado exitosamente.");
@@ -102,34 +101,34 @@ public class SolicitudController {
             @PathVariable String id,
             @RequestHeader("Authorization") String token) {
         try {
-            // Extraer el email del token
+
             String email = jwtUtil.getUsernameFromToken(token.substring(7));
             Usuario usuario = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-            // Buscar la solicitud
+
             Solicitud solicitud = solicitudRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-            // Verificar si el usuario ya está asociado
+
             UsuarioSolicitud usuarioSolicitudExistente = solicitud.getUsuarios().stream()
                     .filter(us -> us.getUsuario().getId().equals(usuario.getId()))
                     .findFirst()
                     .orElse(null);
 
             if (usuarioSolicitudExistente != null) {
-                // Actualizar el estado si ya existe
+
                 usuarioSolicitudExistente.setEstado("pendiente");
             } else {
-                // Crear una nueva relación UsuarioSolicitud
-                UsuarioSolicitud nuevaRelacion = new UsuarioSolicitud(usuario, "pendiente");
-                usuarioSolicitudRepository.save(nuevaRelacion); // Guardar relación en DB
 
-                // Asociar la relación guardada a la solicitud
+                UsuarioSolicitud nuevaRelacion = new UsuarioSolicitud(usuario, "pendiente");
+                usuarioSolicitudRepository.save(nuevaRelacion);
+
+
                 solicitud.getUsuarios().add(nuevaRelacion);
             }
 
-            // Guardar la solicitud
+
             solicitudRepository.save(solicitud);
 
             return ResponseEntity.ok("Usuario asociado correctamente.");
@@ -142,14 +141,14 @@ public class SolicitudController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarSolicitud(@PathVariable String id) {
         try {
-            // Buscar la solicitud por ID
+
             Solicitud solicitud = solicitudRepository.findById(id).orElse(null);
 
             if (solicitud == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Solicitud no encontrada.");
             }
 
-            // Eliminar la solicitud
+
             solicitudRepository.deleteById(id);
 
             return ResponseEntity.ok("Solicitud eliminada correctamente.");
@@ -165,11 +164,11 @@ public class SolicitudController {
         try {
             List<Solicitud> solicitudes = solicitudRepository.findAll();
 
-            // Mapear a SolicitudEnriquecida, excluyendo relaciones inválidas
+            //Filtrar
             List<SolicitudEnriquecida> solicitudesEnriquecidas = solicitudes.stream()
                     .map(solicitud -> {
                         List<SolicitudEnriquecida.UsuarioInfo> usuariosInfo = solicitud.getUsuarios().stream()
-                                .filter(us -> us.getUsuario() != null) // Excluir relaciones con usuarios nulos
+                                .filter(us -> us.getUsuario() != null)
                                 .map(us -> new SolicitudEnriquecida.UsuarioInfo(
                                         us.getUsuario().getId(),
                                         us.getUsuario().getNombre(),
@@ -203,7 +202,7 @@ public class SolicitudController {
 
             List<Solicitud> solicitudes = solicitudRepository.findAll();
 
-            // Filtrar solicitudes no asociadas al usuario
+            // No asociadas al usuario
             List<Solicitud> noAsociadas = solicitudes.stream()
                     .filter(solicitud -> solicitud.getUsuarios().stream()
                             .noneMatch(us -> us.getUsuario() != null && us.getUsuario().getId().equals(usuario.getId())))
@@ -223,7 +222,7 @@ public class SolicitudController {
             Usuario usuario = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-            // Filtrar solicitudes asociadas al usuario
+            // Asociadas al usuario
             List<Solicitud> asociadas = solicitudRepository.findAll().stream()
                     .filter(solicitud -> solicitud.getUsuarios().stream()
                             .anyMatch(us -> us.getUsuario() != null && us.getUsuario().getId().equals(usuario.getId())))

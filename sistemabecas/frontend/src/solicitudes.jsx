@@ -60,7 +60,7 @@ function Solicitudes({ onLogout }) {
         console.log('Is Admin:', isAdmin);
 
         fetchSolicitudes();
-    }, [isAdmin, showUserSolicitudes]); // Refetch when admin or toggle changes
+    }, [isAdmin, showUserSolicitudes]); // actualizar cuando eliminas o actualizas
 
     const handleCreateSolicitud = async () => {
         try {
@@ -181,9 +181,9 @@ function Solicitudes({ onLogout }) {
                     <p>
                         <strong>Estado:</strong>{" "}
                         {solicitud.usuarios
-                            .filter((usuarioItem) => usuarioItem.usuario.id === userId) // Filtra por usuario.id
-                            .map((usuarioItem) => usuarioItem.estado) // Obtén solo el estado
-                            .join(", ") || "No asignado"} {/* Si no hay coincidencias */}
+                            .filter((usuarioItem) => usuarioItem.usuario.id === userId)
+                            .map((usuarioItem) => usuarioItem.estado)
+                            .join(", ") || "No asignado"}
                     </p>
 
 
