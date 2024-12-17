@@ -56,8 +56,6 @@ Ubicado en el directorio principal del proyecto:
     - `SolicitudRepository`, `UsuarioRepository`, `UsuarioSolicitudRepository`
   - `security` - Implementación de seguridad JWT.
     - `CustomUserDetailsService`, `JwtAuthenticationFilter`, `JWTUtil`, `SecurityConfig`
-  - `service`
-    - `ProyectsistemabecasApplication` - Clase principal de Spring Boot.
 - **resources/application.properties** - Configuración de propiedades del servidor.
 - **test/java** - Pruebas del backend.
 
